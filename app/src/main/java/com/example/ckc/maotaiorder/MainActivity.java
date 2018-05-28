@@ -1,6 +1,7 @@
 package com.example.ckc.maotaiorder;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -9,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 
 import com.android.volley.AuthFailureError;
@@ -27,13 +29,26 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
     ListView listView;
     String cookie;
+    MyAdapter adapter;
+    private SharedPreferences preferences;
+    private SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         listView = findViewById(R.id.listview);
-        listView.setAdapter(new MyAdapter(this));
+        adapter=new MyAdapter(this);
+        listView.setAdapter(adapter);
+
+        findViewById(R.id.tv_order).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                for (int i = 0; i <adapter.getCount(); i++) {
+                    System.out.println("order_product_info"+((EditText)listView.getChildAt(i).findViewById(R.id.et_info)).getText().toString());
+                }
+            }
+        });
         login();
     }
 
@@ -44,7 +59,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    public void clearCookie(){
+        preferences=this.getSharedPreferences("cookie_data",MODE_PRIVATE);
+        editor=preferences.edit();
+        editor.remove("Set-Cookie");
+        editor.commit();
+    }
+
     private void login() {
+        clearCookie();
+
         String url = "https://www.cmaotai.com/API/Servers.ashx?";
         RequestQueue queue = Volley.newRequestQueue(this);
         HashMap<String, String> paramsMap = new HashMap<>();
@@ -85,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
         paramsMap.put("qty", "1");
         paramsMap.put("express", "14");
         paramsMap.put("product", "%7B%22Pid%22%3A391%2C%22PName%22%3A%22%E8%B4%B5%E5%B7%9E%E8%8C%85%E5%8F%B0%E9%85%92+(%E6%96%B0%E9%A3%9E%E5%A4%A9)+53%25vol+500ml%22%2C%22PCode%22%3A%2223%22%2C%22Unit%22%3A%22%E7%93%B6%22%2C%22CoverImage%22%3A%22%2Fupload%2FfileStore%2F20180415%2F6365942315164224808933821.jpg%22%2C%22SalePrice%22%3A1499%7D");
+//        paramsMap.put("product", "123");
         paramsMap.put("remark", "");
         paramsMap.put("action", "GrabSingleManager.submit");
         paramsMap.put("timestamp121", new Date().getTime() + "");
@@ -123,12 +148,11 @@ public class MainActivity extends AppCompatActivity {
 
         public MyAdapter(Context context) {
             this.context = context;
-            inflater=LayoutInflater.from(context);
         }
 
         @Override
         public int getCount() {
-            return 5;
+            return 3;
         }
 
         @Override
@@ -143,6 +167,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
+            inflater=LayoutInflater.from(context);
             return inflater.inflate(R.layout.item_order,null);
         }
     }
