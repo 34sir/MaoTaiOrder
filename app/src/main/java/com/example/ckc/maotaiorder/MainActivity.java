@@ -1,13 +1,15 @@
 package com.example.ckc.maotaiorder;
 
+import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.ListView;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -23,33 +25,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-
-    WebView webView;
-
+    ListView listView;
     String cookie;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        webView = findViewById(R.id.webview);
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                CookieSyncManager.createInstance(MainActivity.this);
-                CookieManager cookieManager = CookieManager.getInstance();
-                String CookieStr = "";
-                CookieStr = cookieManager.getCookie(url);
-                cookie=CookieStr;
-//                login();
-                super.onPageFinished(view, url);
-            }
-        });
-
-//        webView.loadUrl("https://www.cmaotai.com/ysh5/page/LoginRegistr/userLogin.html");
-
-
+        listView = findViewById(R.id.listview);
+        listView.setAdapter(new MyAdapter(this));
         login();
     }
 
@@ -70,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
         paramsMap.put("timestamp121", new Date().getTime() + "");
         String params = appendParameter(url, paramsMap);
 
-        MyJsonObjectRequest request = new MyJsonObjectRequest(MainActivity.this,url, Request.Method.POST, params, new Response.Listener<JSONObject>() {
+        MyJsonObjectRequest request = new MyJsonObjectRequest(MainActivity.this, url, Request.Method.POST, params, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject jsonObject) {
                 Log.e("onResponse==success", jsonObject.toString());
@@ -84,38 +68,7 @@ public class MainActivity extends AppCompatActivity {
         }, cookie) {
         };
         try {
-            Log.i("MyJsonObject--login",request.getHeaders().toString());
-        } catch (AuthFailureError authFailureError) {
-            authFailureError.printStackTrace();
-        }
-        queue.add(request);
-    }
-
-    private void isLogin() {
-        String url = "https://www.cmaotai.com/YSApp_API/YSAppServer.ashx?";
-        RequestQueue queue = Volley.newRequestQueue(this);
-        HashMap<String, String> paramsMap = new HashMap<>();
-        paramsMap.put("action", "UserManager.isLogin");
-        paramsMap.put("timestamp121", new Date().getTime() + "");
-        String params = appendParameter(url, paramsMap);
-
-        MyJsonObjectRequest request = new MyJsonObjectRequest(MainActivity.this,url,Request.Method.GET, params, new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject jsonObject) {
-                Log.e("onResponse==success", jsonObject.toString());
-
-                doOrder();
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError volleyError) {
-                Log.e("onResponse=onErrorResponse", volleyError.toString());
-            }
-        }, cookie) {
-        };
-
-        try {
-            Log.i("MyJsonObject--islogin",request.getHeaders().toString());
+            Log.i("MyJsonObject--login", request.getHeaders().toString());
         } catch (AuthFailureError authFailureError) {
             authFailureError.printStackTrace();
         }
@@ -137,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         paramsMap.put("timestamp121", new Date().getTime() + "");
         String params = appendParameter(url, paramsMap);
 
-        MyJsonObjectRequest request = new MyJsonObjectRequest(MainActivity.this,url,Request.Method.POST, params, new Response.Listener<JSONObject>() {
+        MyJsonObjectRequest request = new MyJsonObjectRequest(MainActivity.this, url, Request.Method.POST, params, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject jsonObject) {
                 Log.e("onResponse==success", jsonObject.toString());
@@ -149,12 +102,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }, cookie) {
         };
-
-        try {
-            Log.i("MyJsonObject--doOrder",request.getHeaders().toString());
-        } catch (AuthFailureError authFailureError) {
-            authFailureError.printStackTrace();
-        }
         queue.add(request);
     }
 
@@ -166,5 +113,37 @@ public class MainActivity extends AppCompatActivity {
             builder.appendQueryParameter(entry.getKey(), entry.getValue());
         }
         return builder.build().getQuery();
+    }
+
+
+    private class MyAdapter extends BaseAdapter {
+
+        private Context context;
+        private LayoutInflater inflater;
+
+        public MyAdapter(Context context) {
+            this.context = context;
+            inflater=LayoutInflater.from(context);
+        }
+
+        @Override
+        public int getCount() {
+            return 5;
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return null;
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return 0;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            return inflater.inflate(R.layout.item_order,null);
+        }
     }
 }
