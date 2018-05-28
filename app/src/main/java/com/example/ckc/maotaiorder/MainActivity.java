@@ -10,6 +10,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -46,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.loadUrl("https://www.cmaotai.com/ysh5/page/LoginRegistr/userLogin.html");
+//        webView.loadUrl("https://www.cmaotai.com/ysh5/page/LoginRegistr/userLogin.html");
 
 
         login();
@@ -69,11 +70,11 @@ public class MainActivity extends AppCompatActivity {
         paramsMap.put("timestamp121", new Date().getTime() + "");
         String params = appendParameter(url, paramsMap);
 
-        MyJsonObjectRequest request = new MyJsonObjectRequest(url, params, new Response.Listener<JSONObject>() {
+        MyJsonObjectRequest request = new MyJsonObjectRequest(MainActivity.this,url, Request.Method.POST, params, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject jsonObject) {
                 Log.e("onResponse==success", jsonObject.toString());
-                isLogin();
+                doOrder();
             }
         }, new Response.ErrorListener() {
             @Override
@@ -98,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
         paramsMap.put("timestamp121", new Date().getTime() + "");
         String params = appendParameter(url, paramsMap);
 
-        MyJsonObjectRequest request = new MyJsonObjectRequest(url, params, new Response.Listener<JSONObject>() {
+        MyJsonObjectRequest request = new MyJsonObjectRequest(MainActivity.this,url,Request.Method.GET, params, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject jsonObject) {
                 Log.e("onResponse==success", jsonObject.toString());
@@ -136,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
         paramsMap.put("timestamp121", new Date().getTime() + "");
         String params = appendParameter(url, paramsMap);
 
-        MyJsonObjectRequest request = new MyJsonObjectRequest(url, params, new Response.Listener<JSONObject>() {
+        MyJsonObjectRequest request = new MyJsonObjectRequest(MainActivity.this,url,Request.Method.POST, params, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject jsonObject) {
                 Log.e("onResponse==success", jsonObject.toString());
