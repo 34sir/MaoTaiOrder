@@ -25,6 +25,7 @@ import org.json.JSONObject;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -44,6 +45,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         orders = new Order().initOrder();
         setContentView(R.layout.activity_main);
+
+        Iterator<Map.Entry<String, String>> iterator = orders.entrySet().iterator();
+        String notice="";
+        while (iterator.hasNext()) {
+            Map.Entry<String, String> entry=iterator.next();
+            notice+=entry.getKey()+",";
+        }
+        ((TextView)findViewById(R.id.tv_support_orders)).setText(notice);
+
         initView();
 
         findViewById(R.id.tv_order).setOnClickListener(new View.OnClickListener() {
@@ -78,12 +88,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void clearInfo(){
+    public void clearInfo() {
         for (int i = 0; i < views.length; i++) {
-            ((EditText)views[i].findViewById(R.id.et_info)).setText("");
-            ((EditText)views[i].findViewById(R.id.et_account)).setText("");
-            ((EditText)views[i].findViewById(R.id.et_psw)).setText("");
-            ((TextView)views[i].findViewById(R.id.tv_result)).setText("状态:");
+            ((EditText) views[i].findViewById(R.id.et_info)).setText("");
+            ((EditText) views[i].findViewById(R.id.et_account)).setText("");
+            ((EditText) views[i].findViewById(R.id.et_psw)).setText("");
+            ((TextView) views[i].findViewById(R.id.tv_result)).setText("状态:");
         }
     }
 
@@ -103,10 +113,10 @@ public class MainActivity extends AppCompatActivity {
     private void login(final int index) {
         clearCookie();
 
-        String tel=((EditText) views[index].findViewById(R.id.et_account)).getText().toString().trim();
-        String pwd=((EditText) views[index].findViewById(R.id.et_psw)).getText().toString().trim();
+        String tel = ((EditText) views[index].findViewById(R.id.et_account)).getText().toString().trim();
+        String pwd = ((EditText) views[index].findViewById(R.id.et_psw)).getText().toString().trim();
 
-        if(TextUtils.isEmpty(tel)||TextUtils.isEmpty(pwd)){
+        if (TextUtils.isEmpty(tel) || TextUtils.isEmpty(pwd)) {
             return;
         }
 
@@ -125,9 +135,9 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("onResponse==success", jsonObject.toString());
                 if (jsonObject.has("code")) {
                     try {
-                        if (((int)jsonObject.get("code"))==0) {
+                        if (((int) jsonObject.get("code")) == 0) {
                             doOrder(index);
-                        }else {
+                        } else {
                             ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
                         }
                     } catch (JSONException e) {
@@ -135,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
                         ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
 
                     }
-                }else {
+                } else {
                     ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
                 }
             }
@@ -157,9 +167,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void doOrder(final int index) {
         String sid = ((EditText) views[index].findViewById(R.id.et_info)).getText().toString().trim();
-        String qty=((EditText) views[index].findViewById(R.id.et_count)).getText().toString().trim();
+        String qty = ((EditText) views[index].findViewById(R.id.et_count)).getText().toString().trim();
 
-        if(TextUtils.isEmpty(sid)||TextUtils.isEmpty(qty)){
+        if (TextUtils.isEmpty(sid) || TextUtils.isEmpty(qty)) {
             return;
         }
 
@@ -187,9 +197,9 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("onResponse==success", jsonObject.toString());
                 if (jsonObject.has("code")) {
                     try {
-                        if ((int)jsonObject.get("code")==0) {
+                        if ((int) jsonObject.get("code") == 0) {
                             ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:成功");
-                        }else {
+                        } else {
                             ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
                         }
                     } catch (JSONException e) {
@@ -197,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
                         ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
 
                     }
-                }else {
+                } else {
                     ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
                 }
             }
