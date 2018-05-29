@@ -1,17 +1,17 @@
 package com.example.ckc.maotaiorder;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.EditText;
-import android.widget.ListView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -20,6 +20,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
@@ -27,31 +28,64 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    ListView listView;
     String cookie;
-    MyAdapter adapter;
     private SharedPreferences preferences;
     private SharedPreferences.Editor editor;
+    private HashMap<String, String> orders;
+    private LinearLayout lin_orders;
+    private LayoutInflater inflater;
+    private View view;
+
+
+    private View[] views = new View[5];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        orders = new Order().initOrder();
         setContentView(R.layout.activity_main);
-        listView = findViewById(R.id.listview);
-        adapter=new MyAdapter(this);
-        listView.setAdapter(adapter);
+        initView();
 
         findViewById(R.id.tv_order).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                for (int i = 0; i <adapter.getCount(); i++) {
-                    System.out.println("order_product_info"+((EditText)listView.getChildAt(i).findViewById(R.id.et_info)).getText().toString());
-                }
+                startDoOrder();
             }
         });
-        login();
+        findViewById(R.id.tv_clear).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearInfo();
+            }
+        });
     }
 
+
+    private void initView() {
+        lin_orders = findViewById(R.id.lin_orders);
+        inflater = LayoutInflater.from(this);
+        for (int i = 0; i < views.length; i++) {
+            view = inflater.inflate(R.layout.item_order, null);
+            lin_orders.addView(view);
+            views[i] = view;
+        }
+    }
+
+
+    public void startDoOrder() {
+        for (int i = 0; i < views.length; i++) {
+            login(i);
+        }
+    }
+
+    public void clearInfo(){
+        for (int i = 0; i < views.length; i++) {
+            ((EditText)views[i].findViewById(R.id.et_info)).setText("");
+            ((EditText)views[i].findViewById(R.id.et_account)).setText("");
+            ((EditText)views[i].findViewById(R.id.et_psw)).setText("");
+            ((TextView)views[i].findViewById(R.id.tv_result)).setText("状态:");
+        }
+    }
 
     @Override
     protected void onResume() {
@@ -59,22 +93,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void clearCookie(){
-        preferences=this.getSharedPreferences("cookie_data",MODE_PRIVATE);
-        editor=preferences.edit();
+    public void clearCookie() {
+        preferences = this.getSharedPreferences("cookie_data", MODE_PRIVATE);
+        editor = preferences.edit();
         editor.remove("Set-Cookie");
         editor.commit();
     }
 
-    private void login() {
+    private void login(final int index) {
         clearCookie();
+
+        String tel=((EditText) views[index].findViewById(R.id.et_account)).getText().toString().trim();
+        String pwd=((EditText) views[index].findViewById(R.id.et_psw)).getText().toString().trim();
+
+        if(TextUtils.isEmpty(tel)||TextUtils.isEmpty(pwd)){
+            return;
+        }
 
         String url = "https://www.cmaotai.com/API/Servers.ashx?";
         RequestQueue queue = Volley.newRequestQueue(this);
         HashMap<String, String> paramsMap = new HashMap<>();
         paramsMap.put("action", "UserManager.login");
-        paramsMap.put("tel", "13145016210");
-        paramsMap.put("pwd", "123456");
+        paramsMap.put("tel", tel);
+        paramsMap.put("pwd", pwd);
         paramsMap.put("timestamp121", new Date().getTime() + "");
         String params = appendParameter(url, paramsMap);
 
@@ -82,12 +123,26 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(JSONObject jsonObject) {
                 Log.e("onResponse==success", jsonObject.toString());
-                doOrder();
+                if (jsonObject.has("code")) {
+                    try {
+                        if (((int)jsonObject.get("code"))==0) {
+                            doOrder(index);
+                        }else {
+                            ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
+
+                    }
+                }else {
+                    ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
+                }
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError volleyError) {
-                Log.e("onResponse=onErrorResponse", volleyError.toString());
+                ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
             }
         }, cookie) {
         };
@@ -100,16 +155,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void doOrder() {
+    public void doOrder(final int index) {
+        String sid = ((EditText) views[index].findViewById(R.id.et_info)).getText().toString().trim();
+        String qty=((EditText) views[index].findViewById(R.id.et_count)).getText().toString().trim();
+
+        if(TextUtils.isEmpty(sid)||TextUtils.isEmpty(qty)){
+            return;
+        }
+
         String url = "https://www.cmaotai.com/API/Servers.ashx?";
         RequestQueue queue = Volley.newRequestQueue(this);
         HashMap<String, String> paramsMap = new HashMap<>();
         paramsMap.put("sid", "2353140");
         paramsMap.put("iid", "-1");
-        paramsMap.put("qty", "1");
+        paramsMap.put("qty", qty);
         paramsMap.put("express", "14");
-        paramsMap.put("product", "%7B%22Pid%22%3A391%2C%22PName%22%3A%22%E8%B4%B5%E5%B7%9E%E8%8C%85%E5%8F%B0%E9%85%92+(%E6%96%B0%E9%A3%9E%E5%A4%A9)+53%25vol+500ml%22%2C%22PCode%22%3A%2223%22%2C%22Unit%22%3A%22%E7%93%B6%22%2C%22CoverImage%22%3A%22%2Fupload%2FfileStore%2F20180415%2F6365942315164224808933821.jpg%22%2C%22SalePrice%22%3A1499%7D");
-//        paramsMap.put("product", "123");
+        if (orders.containsKey(sid)) {
+            paramsMap.put("product", orders.get(sid));
+        } else {
+            Toast.makeText(MainActivity.this, "无此商品，请联系开发者添加此商品", Toast.LENGTH_LONG).show();
+            return;
+        }
         paramsMap.put("remark", "");
         paramsMap.put("action", "GrabSingleManager.submit");
         paramsMap.put("timestamp121", new Date().getTime() + "");
@@ -119,11 +185,28 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(JSONObject jsonObject) {
                 Log.e("onResponse==success", jsonObject.toString());
+                if (jsonObject.has("code")) {
+                    try {
+                        if ((int)jsonObject.get("code")==0) {
+                            ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:成功");
+                        }else {
+                            ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
+
+                    }
+                }else {
+                    ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
+                }
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError volleyError) {
                 Log.e("onResponse=onErrorResponse", volleyError.toString());
+                ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
+
             }
         }, cookie) {
         };
@@ -140,35 +223,4 @@ public class MainActivity extends AppCompatActivity {
         return builder.build().getQuery();
     }
 
-
-    private class MyAdapter extends BaseAdapter {
-
-        private Context context;
-        private LayoutInflater inflater;
-
-        public MyAdapter(Context context) {
-            this.context = context;
-        }
-
-        @Override
-        public int getCount() {
-            return 3;
-        }
-
-        @Override
-        public Object getItem(int position) {
-            return null;
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return 0;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            inflater=LayoutInflater.from(context);
-            return inflater.inflate(R.layout.item_order,null);
-        }
-    }
 }
