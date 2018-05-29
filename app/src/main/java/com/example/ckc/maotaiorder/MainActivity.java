@@ -13,7 +13,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -83,9 +82,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void startDoOrder() {
-        for (int i = 0; i < views.length; i++) {
-            login(i);
-        }
+//        for (int i = 0; i < views.length; i++) {
+            login(0);
+//        }
     }
 
     public void clearInfo() {
@@ -110,9 +109,11 @@ public class MainActivity extends AppCompatActivity {
         editor.commit();
     }
 
-    private void login(final int index) {
+    private synchronized void login(final int index) {
+        if(index>views.length-1){
+            return;
+        }
         clearCookie();
-
         String tel = ((EditText) views[index].findViewById(R.id.et_account)).getText().toString().trim();
         String pwd = ((EditText) views[index].findViewById(R.id.et_psw)).getText().toString().trim();
 
@@ -156,16 +157,15 @@ public class MainActivity extends AppCompatActivity {
             }
         }, cookie) {
         };
-        try {
-            Log.i("MyJsonObject--login", request.getHeaders().toString());
-        } catch (AuthFailureError authFailureError) {
-            authFailureError.printStackTrace();
-        }
         queue.add(request);
     }
 
 
     public void doOrder(final int index) {
+        if(index>views.length-1){
+            return;
+        }
+
         String sid = ((EditText) views[index].findViewById(R.id.et_info)).getText().toString().trim();
         String qty = ((EditText) views[index].findViewById(R.id.et_count)).getText().toString().trim();
 
@@ -210,13 +210,15 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
                 }
+
+                login(index+1);
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError volleyError) {
                 Log.e("onResponse=onErrorResponse", volleyError.toString());
                 ((TextView) views[index].findViewById(R.id.tv_result)).setText("状态:失败");
-
+                login(index+1);
             }
         }, cookie) {
         };
