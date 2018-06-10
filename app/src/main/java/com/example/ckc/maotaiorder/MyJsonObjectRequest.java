@@ -33,11 +33,17 @@ public class MyJsonObjectRequest extends JsonRequest<JSONObject> {
 
     public String cookieFromResponse;
     private String mHeader;
-    private String cookie;
 
     private SharedPreferences preferences;
     private Context context;
     private SharedPreferences.Editor editor;
+
+    private boolean isLogin;
+    private String requestId;
+
+    private HashMap<String, String> map = new HashMap<>();
+
+    private MyJsonObjectRequest request;
 
     /**
      * 这里的method必须是Method.POST，也就是必须带参数。
@@ -46,16 +52,38 @@ public class MyJsonObjectRequest extends JsonRequest<JSONObject> {
      * @param stringRequest 格式应该是 "key1=value1&key2=value2"
      */
 
-    public MyJsonObjectRequest(Context context,String url,int method, String stringRequest,
-                               Response.Listener<JSONObject> listener, Response.ErrorListener errorListener,String cookie) {
+    public MyJsonObjectRequest(Context context, String url, int method, String stringRequest,
+                               Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
         super(method, url, stringRequest, listener, errorListener);
         this.stringRequest = stringRequest;
-        this.cookie=cookie;
-        this.context=context;
+        this.context = context;
 
-        preferences=context.getSharedPreferences("cookie_data",MODE_PRIVATE);
-        editor=preferences.edit();
+        preferences = context.getSharedPreferences("cookie_data", MODE_PRIVATE);
+        editor = preferences.edit();
     }
+
+    public MyJsonObjectRequest setIsLogin(boolean isLogin) {
+        this.isLogin = isLogin;
+        return this;
+    }
+
+    public MyJsonObjectRequest setRequestID(String requestId) {
+        this.requestId = requestId;
+        return this;
+    }
+
+    public MyJsonObjectRequest setRequest(MyJsonObjectRequest request) {
+        this.request = request;
+        return this;
+    }
+
+    public String cookie;
+
+
+    public String getCookie() {
+        return cookie;
+    }
+
 
     @Override
     public String getBodyContentType() {
@@ -65,31 +93,30 @@ public class MyJsonObjectRequest extends JsonRequest<JSONObject> {
     @Override
     protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
         try {
-            Log.w("LOG","parseNetworkResponse"+response.toString());
             String jsonString = new String(response.data,
                     HttpHeaderParser.parseCharset(response.headers, PROTOCOL_CHARSET));
-
+            Log.w("LOG", "parseNetworkResponse" + jsonString);
             mHeader = response.headers.toString();
-            Log.w("LOG","get headers in parseNetworkResponse "+response.headers.toString());
+            Log.w("LOG", "get headers in parseNetworkResponse " + response.headers.toString());
             //使用正则表达式从reponse的头中提取cookie内容的子串
-            Pattern pattern= Pattern.compile("Set-Cookie.*?,");
-            Matcher m=pattern.matcher(mHeader);
-            if(m.find()){
-                cookieFromResponse =m.group();
-                cookieFromResponse=cookieFromResponse.replace("Set-Cookie=","").replace(",","");
-                if(cookieFromResponse.contains("acw_tc")&&cookieFromResponse.contains("ASP.NET_SessionId")&&cookieFromResponse.contains("SERVERID")){
-                    editor.putString("Set-Cookie",cookieFromResponse);
-                    editor.commit();
+            Pattern pattern = Pattern.compile("Set-Cookie.*?,");
+            Matcher m = pattern.matcher(mHeader);
+            if (m.find()) {
+                cookieFromResponse = m.group();
+                cookieFromResponse = cookieFromResponse.replace("Set-Cookie=", "").replace(",", "");
+                if (isLogin&&cookieFromResponse.contains("acw_tc") && cookieFromResponse.contains("ASP.NET_SessionId") && cookieFromResponse.contains("SERVERID") && cookieFromResponse.contains("Vshop-Member")) {
+                    editor.putString(requestId, cookieFromResponse);
+                    editor.apply();
                 }
-                Log.w("LOG","cookie from server "+ cookieFromResponse);
+                Log.w("LOG", "cookie from server " + cookieFromResponse);
             }
 //            //去掉cookie末尾的分号
 //            cookieFromResponse = cookieFromResponse.substring(11,cookieFromResponse.length()-1);
 //            Log.w("LOG","cookie substring "+ cookieFromResponse);
             //将cookie字符串添加到jsonObject中，该jsonObject会被deliverResponse递交，调用请求时则能在onResponse中得到
             JSONObject jsonObject = new JSONObject(jsonString);
-            jsonObject.put("Cookie",cookieFromResponse);
-            Log.w("LOG","jsonObject "+ jsonObject.toString());
+            jsonObject.put("Cookie", cookieFromResponse);
+            Log.w("LOG", "jsonObject " + jsonObject.toString());
 
             return Response.success(new JSONObject(jsonString),
                     HttpHeaderParser.parseCacheHeaders(response));
@@ -105,16 +132,16 @@ public class MyJsonObjectRequest extends JsonRequest<JSONObject> {
         Map<String, String> headerMap = new HashMap<String, String>();
         headerMap.put("User-Agent", "Mozilla/5.0 (Linux; Android 5.0.2; MI 2 Build/LRX22G; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.132 Mobile Safari/537.36[android/1.0.23/fd5a2d67b896af6a2603845f43c51072/40498f60941693187be98a1c7dd8c148]");
 
-        String Cookie=preferences.getString("Set-Cookie","");
-        if(!TextUtils.isEmpty(Cookie)){
-            headerMap.put("Cookie", preferences.getString("Set-Cookie",""));
+        String Cookie = preferences.getString(requestId, "");
+        if (!isLogin && !TextUtils.isEmpty(Cookie)) {
+            headerMap.put("Cookie", Cookie);
+            System.out.println("getHeadersCookie=" + Cookie + "-----requestid=" + requestId);
         }
-        if(headerMap != null) {
+        if (headerMap != null) {
             return headerMap;
         }
         return super.getHeaders();
     }
-
 
 
 //    @Override
